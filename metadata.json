@@ -1,0 +1,5 @@
+{
+  "name": "School Management System",
+  "description": "A web application for schools to manage classes, students, subjects, and grades. It features data entry for grades and a comprehensive reports page with dynamic charts and data export functionality.",
+  "requestFramePermissions": []
+}
