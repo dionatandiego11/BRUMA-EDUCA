@@ -1,65 +1,33 @@
 
-import React, { useState } from 'react';
+import React from 'react';
+import { Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
-import DataEntryPage from './pages/DataEntryPage';
-import ReportsPage from './pages/ReportsPage';
-import { useSchoolData } from './hooks/useSchoolData';
-import type { Page } from './types';
+import HomePage from './pages/HomePage';
+import InsertDataPage from './pages/InsertDataPage';
+import ResultsPage from './pages/ResultsPage';
+import { dbService } from './services/dbService';
 
-
-const App: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState<Page>('reports');
-  const { 
-    classes, 
-    students, 
-    subjects, 
-    grades, 
-    addGrade, 
-    loading, 
-    error 
-  } = useSchoolData();
-
-  const renderPage = () => {
-    switch (currentPage) {
-      case 'data-entry':
-        return <DataEntryPage 
-                  classes={classes} 
-                  students={students} 
-                  subjects={subjects} 
-                  addGrade={addGrade} 
-                  grades={grades}
-                />;
-      case 'reports':
-        return <ReportsPage 
-                  classes={classes} 
-                  students={students} 
-                  subjects={subjects} 
-                  grades={grades} 
-                />;
-      default:
-        return <ReportsPage 
-                  classes={classes} 
-                  students={students} 
-                  subjects={subjects} 
-                  grades={grades} 
-                />;
-    }
-  };
+function App() {
+  // Initialize the mock database on app load
+  React.useEffect(() => {
+    dbService.initialize();
+  }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans text-gray-800">
-      <Header currentPage={currentPage} setCurrentPage={setCurrentPage} />
-      <main className="p-4 sm:p-6 md:p-8">
-        {loading && (
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
-          </div>
-        )}
-        {error && <p className="text-center text-red-500 bg-red-100 p-4 rounded-lg">{error}</p>}
-        {!loading && !error && renderPage()}
+    <div className="min-h-screen flex flex-col">
+      <Header />
+      <main className="flex-grow container mx-auto p-4 md:p-8">
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/inserir-dados" element={<InsertDataPage />} />
+          <Route path="/resultados" element={<ResultsPage />} />
+        </Routes>
       </main>
+      <footer className="text-center p-4 text-slate-500 text-sm">
+        <p>&copy; 2024 Secretaria de Educação - Versão Protótipo</p>
+      </footer>
     </div>
   );
-};
+}
 
 export default App;

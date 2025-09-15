@@ -1,25 +1,17 @@
 
-export interface SchoolClass {
+export interface Score {
   id: string;
+  school: string;
+  grade: string;
+  student: string;
+  teacher: string;
+  subject: string;
+  questionCode: string;
+  score: number; // 1 for correct, 0 for incorrect
+  date: string;
+}
+
+export interface ChartData {
   name: string;
+  averageScore: number;
 }
-
-export interface Student {
-  id: string;
-  name:string;
-  classId: string;
-}
-
-export interface Subject {
-  id: string;
-  name: string;
-}
-
-export interface Grade {
-  id: string;
-  studentId: string;
-  subjectId: string;
-  grade: number;
-}
-
-export type Page = 'data-entry' | 'reports';

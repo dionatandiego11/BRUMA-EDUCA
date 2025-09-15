@@ -1,25 +1,44 @@
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
   <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale-1.0" />
-    <title>School Management System</title>
+    <meta charset="UTF-g" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sistema de Avaliação de Desempenho Escolar</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/recharts/umd/Recharts.min.js"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'primary': '#0284c7', // sky-600
+              'secondary': '#475569', // slate-600
+              'accent': '#10b981', // emerald-500
+              'background': '#f1f5f9', // slate-100
+              'surface': '#ffffff',
+            }
+          }
+        }
+      }
+    </script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/react-router-dom@6/umd/react-router-dom.production.min.js"></script>
+    <script src="https://unpkg.com/recharts@2/umd/Recharts.min.js"></script>
   <script type="importmap">
 {
   "imports": {
+    "recharts": "https://aistudiocdn.com/recharts@^3.2.0",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
     "react/": "https://aistudiocdn.com/react@^19.1.1/",
     "react": "https://aistudiocdn.com/react@^19.1.1",
-    "recharts": "https://aistudiocdn.com/recharts@^3.2.0"
+    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.9.1"
   }
 }
 </script>
+<link rel="stylesheet" href="/index.css">
 </head>
-  <body class="bg-gray-100">
+  <body class="bg-background text-secondary">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

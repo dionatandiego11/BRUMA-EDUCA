@@ -1,5 +1,5 @@
 {
-  "name": "School Management System",
-  "description": "A web application for schools to manage classes, students, subjects, and grades. It features data entry for grades and a comprehensive reports page with dynamic charts and data export functionality.",
+  "name": "Sistema de Avaliação de Desempenho Escolar",
+  "description": "Uma aplicação web para inserir e visualizar o desempenho de alunos em avaliações escolares, gerando gráficos e relatórios para análise.",
   "requestFramePermissions": []
 }
