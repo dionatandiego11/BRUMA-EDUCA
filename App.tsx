@@ -24,7 +24,7 @@ function App() {
         </Routes>
       </main>
       <footer className="text-center p-4 text-slate-500 text-sm">
-        <p>&copy; 2024 Secretaria de Educação - Versão Protótipo</p>
+        <p>&copy; 2025 Secretaria de Educação Brumadinho - Versão Protótipo</p>
       </footer>
     </div>
   );
