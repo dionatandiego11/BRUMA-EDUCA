@@ -62,7 +62,10 @@ const systemData = {
 };
 
 
+const isBrowser = typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
+
 const getScores = (): Score[] => {
+  if (!isBrowser) return [];
   try {
     const data = localStorage.getItem(DB_KEY);
     return data ? JSON.parse(data) : [];
@@ -73,6 +76,7 @@ const getScores = (): Score[] => {
 };
 
 const saveScores = (scores: Score[]): void => {
+  if (!isBrowser) return;
   try {
     localStorage.setItem(DB_KEY, JSON.stringify(scores));
   } catch (error) {

@@ -152,18 +152,19 @@ const InsertDataPage: React.FC = () => {
     setIsLoading(true);
     try {
       const dadosParaSalvar = questoes.map((questao) => ({
-        escola,
-        serie,
-        turma,
-        aluno,
-        professor,
-        disciplina,
-        questao,
-        acertou: respostas[questao] ?? false,
+        school: escola,
+        grade: serie,
+        student: aluno,
+        teacher: professor,
+        subject: disciplina,
+        questionCode: questao,
+        score: respostas[questao] ? 1 : 0,
       }));
 
       // Simula uma chamada de API e salva cada registro
-      await Promise.all(dadosParaSalvar.map(dado => dbService.addScore(dado)));
+      for (const dado of dadosParaSalvar) {
+        await dbService.addScore(dado);
+      }
       
       setSuccess('Dados inseridos com sucesso!');
       
