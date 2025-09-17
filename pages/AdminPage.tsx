@@ -1,184 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { ArrowLeft, School, Users, BookOpen, UserCheck, GraduationCap, FileText, Save, Plus, X } from 'lucide-react';
-
-// Mock types based on your structure
-type Disciplina = 'Português' | 'Matemática';
-type Alternativa = 'A' | 'B' | 'C' | 'D';
-
-interface Escola {
-  id: string;
-  nome: string;
-}
-
-interface Serie {
-  id: string;
-  nome: string;
-  escolaId: string;
-}
-
-interface Turma {
-  id: string;
-  nome: string;
-  serieId: string;
-  professorIds: string[];
-}
-
-interface Professor {
-  id: string;
-  nome: string;
-}
-
-interface Aluno {
-  id: string;
-  nome: string;
-}
-
-interface Provao {
-  id: string;
-  nome: string;
-  turmaId: string;
-  data: string;
-}
-
-interface Questao {
-  id: string;
-  provaoId: string;
-  disciplina: Disciplina;
-  descricao: string;
-  habilidade_codigo: string;
-}
-
-interface Gabarito {
-  id: string;
-  questaoId: string;
-  respostaCorreta: Alternativa;
-}
-
-// Mock database service
-const mockDbService = {
-  escolas: [
-    { id: '1', nome: 'Escola Municipal João Silva' },
-    { id: '2', nome: 'Colégio Estadual Maria Santos' }
-  ] as Escola[],
-
-  series: [
-    { id: '1', nome: '1º Ano', escolaId: '1' },
-    { id: '2', nome: '2º Ano', escolaId: '1' },
-    { id: '3', nome: '3º Ano', escolaId: '2' }
-  ] as Serie[],
-
-  turmas: [
-    { id: '1', nome: 'Turma A', serieId: '1', professorIds: ['1'] },
-    { id: '2', nome: 'Turma B', serieId: '1', professorIds: [] }
-  ] as Turma[],
-
-  professores: [
-    { id: '1', nome: 'Prof. Ana Costa' },
-    { id: '2', nome: 'Prof. João Oliveira' },
-    { id: '3', nome: 'Prof. Maria Silva' }
-  ] as Professor[],
-
-  alunos: [
-    { id: '1', nome: 'Pedro Santos' },
-    { id: '2', nome: 'Ana Beatriz' },
-    { id: '3', nome: 'Carlos Eduardo' },
-    { id: '4', nome: 'Letícia Alves' }
-  ] as Aluno[],
-
-  matriculas: [
-    { id: '1', alunoId: '1', turmaId: '1' },
-    { id: '2', alunoId: '2', turmaId: '1' }
-  ],
-
-  provoes: [
-    { id: '1', nome: 'Provão 1º Bimestre', turmaId: '1', data: new Date().toISOString() }
-  ] as Provao[],
-
-  questoes: [
-    { id: '1', provaoId: '1', disciplina: 'Português' as Disciplina, descricao: 'Questão sobre interpretação de texto', habilidade_codigo: 'EF15LP03' },
-    { id: '2', provaoId: '1', disciplina: 'Matemática' as Disciplina, descricao: 'Questão sobre operações básicas', habilidade_codigo: 'EF02MA05' }
-  ] as Questao[],
-
-  gabaritos: [
-    { id: '1', questaoId: '1', respostaCorreta: 'A' as Alternativa },
-    { id: '2', questaoId: '2', respostaCorreta: 'C' as Alternativa }
-  ] as Gabarito[],
-
-  getEscolas: () => mockDbService.escolas,
-  getProfessores: () => mockDbService.professores,
-  getAlunos: () => mockDbService.alunos,
-  getSeriesByEscola: (escolaId: string) => mockDbService.series.filter(s => s.escolaId === escolaId),
-  getTurmasBySerie: (serieId: string) => mockDbService.turmas.filter(t => t.serieId === serieId),
-  getAlunosByTurma: (turmaId: string) => {
-    const matriculas = mockDbService.matriculas.filter(m => m.turmaId === turmaId);
-    return mockDbService.alunos.filter(a => matriculas.some(m => m.alunoId === a.id));
-  },
-  getProfessoresByTurma: (turmaId: string) => {
-    const turma = mockDbService.turmas.find(t => t.id === turmaId);
-    if (!turma) return [];
-    return mockDbService.professores.filter(p => turma.professorIds.includes(p.id));
-  },
-  getProvoesByTurma: (turmaId: string) => mockDbService.provoes.filter(p => p.turmaId === turmaId),
-  getQuestoesByProvao: (provaoId: string) => mockDbService.questoes.filter(q => q.provaoId === provaoId),
-  getGabaritoByQuestao: (questaoId: string) => mockDbService.gabaritos.find(g => g.questaoId === questaoId),
-
-  addEscola: (escola: Omit<Escola, 'id'>) => {
-    const newEscola = { ...escola, id: Date.now().toString() };
-    mockDbService.escolas.push(newEscola);
-  },
-
-  addSerie: (serie: Omit<Serie, 'id'>) => {
-    const newSerie = { ...serie, id: Date.now().toString() };
-    mockDbService.series.push(newSerie);
-  },
-
-  addTurma: (turma: Omit<Turma, 'id'>) => {
-    const newTurma = { ...turma, id: Date.now().toString() };
-    mockDbService.turmas.push(newTurma);
-  },
-
-  addProfessor: (professor: Omit<Professor, 'id'>) => {
-    const newProfessor = { ...professor, id: Date.now().toString() };
-    mockDbService.professores.push(newProfessor);
-  },
-
-  addAluno: (aluno: Omit<Aluno, 'id'>) => {
-    const newAluno = { ...aluno, id: Date.now().toString() };
-    mockDbService.alunos.push(newAluno);
-  },
-
-  addMatricula: (matricula: { alunoId: string; turmaId: string }) => {
-    const newMatricula = { ...matricula, id: Date.now().toString() };
-    mockDbService.matriculas.push(newMatricula);
-  },
-
-  addProvao: (provao: Omit<Provao, 'id'>) => {
-    const newProvao = { ...provao, id: Date.now().toString() };
-    mockDbService.provoes.push(newProvao);
-  },
-
-  addQuestao: (questao: Omit<Questao, 'id'>) => {
-    const newQuestao = { ...questao, id: Date.now().toString() };
-    mockDbService.questoes.push(newQuestao);
-  },
-
-  addGabarito: (gabarito: Omit<Gabarito, 'id'>) => {
-    const existingIndex = mockDbService.gabaritos.findIndex(g => g.questaoId === gabarito.questaoId);
-    if (existingIndex >= 0) {
-      mockDbService.gabaritos[existingIndex] = { ...gabarito, id: mockDbService.gabaritos[existingIndex].id };
-    } else {
-      const newGabarito = { ...gabarito, id: Date.now().toString() };
-      mockDbService.gabaritos.push(newGabarito);
-    }
-  },
-
-  updateTurma: (turmaId: string, updates: Partial<Turma>) => {
-    const index = mockDbService.turmas.findIndex(t => t.id === turmaId);
-    if (index >= 0) {
-      mockDbService.turmas[index] = { ...mockDbService.turmas[index], ...updates };
-    }
-  }
-};
+import { dbService } from '../services/dbService';
+import { Escola, Serie, Turma, Professor, Aluno, Provao, Questao, Gabarito, Disciplina, Alternativa } from '../types';
 
 // Components
 const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
@@ -324,14 +147,14 @@ const AdminPage: React.FC = () => {
 
   // --- Carregar dados iniciais e reativos ---
   useEffect(() => {
-    setEscolas(mockDbService.getEscolas());
-    setProfessores(mockDbService.getProfessores());
-    setAlunos(mockDbService.getAlunos());
+    setEscolas(dbService.getEscolas());
+    setProfessores(dbService.getProfessores());
+    setAlunos(dbService.getAlunos());
   }, []);
 
   useEffect(() => {
     if (selectedEscola) {
-      setSeriesOfSelectedEscola(mockDbService.getSeriesByEscola(selectedEscola));
+      setSeriesOfSelectedEscola(dbService.getSeriesByEscola(selectedEscola));
     } else {
       setSeriesOfSelectedEscola([]);
     }
@@ -341,7 +164,7 @@ const AdminPage: React.FC = () => {
 
   useEffect(() => {
     if (selectedSerie) {
-      setTurmasOfSelectedSerie(mockDbService.getTurmasBySerie(selectedSerie));
+      setTurmasOfSelectedSerie(dbService.getTurmasBySerie(selectedSerie));
     } else {
       setTurmasOfSelectedSerie([]);
     }
@@ -350,9 +173,9 @@ const AdminPage: React.FC = () => {
 
   useEffect(() => {
     if (selectedTurma) {
-      setAlunosNaTurma(mockDbService.getAlunosByTurma(selectedTurma));
-      setProfessoresNaTurma(mockDbService.getProfessoresByTurma(selectedTurma));
-      setProvoes(mockDbService.getProvoesByTurma(selectedTurma));
+      setAlunosNaTurma(dbService.getAlunosByTurma(selectedTurma));
+      setProfessoresNaTurma(dbService.getProfessoresByTurma(selectedTurma));
+      setProvoes(dbService.getProvoesByTurma(selectedTurma));
     } else {
       setAlunosNaTurma([]);
       setProfessoresNaTurma([]);
@@ -363,11 +186,11 @@ const AdminPage: React.FC = () => {
   
   useEffect(() => {
     if (selectedProvao) {
-      const questoesDoProvao = mockDbService.getQuestoesByProvao(selectedProvao);
+      const questoesDoProvao = dbService.getQuestoesByProvao(selectedProvao);
       setQuestoes(questoesDoProvao);
       const loadedGabaritos = new Map<string, Alternativa>();
       questoesDoProvao.forEach(q => {
-        const gabarito = mockDbService.getGabaritoByQuestao(q.id);
+        const gabarito = dbService.getGabaritoByQuestao(q.id);
         if (gabarito) {
           loadedGabaritos.set(q.id, gabarito.respostaCorreta);
         }
@@ -394,9 +217,9 @@ const AdminPage: React.FC = () => {
   const handleAddEscola = (e: React.FormEvent) => {
     e.preventDefault();
     if (newEscola.trim()) {
-      mockDbService.addEscola({ nome: newEscola.trim() });
+      dbService.addEscola({ nome: newEscola.trim() });
       setNewEscola('');
-      setEscolas(mockDbService.getEscolas());
+      setEscolas(dbService.getEscolas());
       showNotification('Escola adicionada com sucesso!');
     }
   };
@@ -404,9 +227,9 @@ const AdminPage: React.FC = () => {
   const handleAddSerie = (e: React.FormEvent) => {
     e.preventDefault();
     if (newSerie.trim() && selectedEscola) {
-      mockDbService.addSerie({ nome: newSerie.trim(), escolaId: selectedEscola });
+      dbService.addSerie({ nome: newSerie.trim(), escolaId: selectedEscola });
       setNewSerie('');
-      setSeriesOfSelectedEscola(mockDbService.getSeriesByEscola(selectedEscola));
+      setSeriesOfSelectedEscola(dbService.getSeriesByEscola(selectedEscola));
       showNotification('Série adicionada com sucesso!');
     }
   };
@@ -414,9 +237,9 @@ const AdminPage: React.FC = () => {
   const handleAddTurma = (e: React.FormEvent) => {
     e.preventDefault();
     if (newTurma.trim() && selectedSerie) {
-      mockDbService.addTurma({ nome: newTurma.trim(), serieId: selectedSerie, professorIds: [] });
+      dbService.addTurma({ nome: newTurma.trim(), serieId: selectedSerie, professorIds: [] });
       setNewTurma('');
-      setTurmasOfSelectedSerie(mockDbService.getTurmasBySerie(selectedSerie));
+      setTurmasOfSelectedSerie(dbService.getTurmasBySerie(selectedSerie));
       showNotification('Turma adicionada com sucesso!');
     }
   };
@@ -424,9 +247,9 @@ const AdminPage: React.FC = () => {
   const handleAddProfessor = (e: React.FormEvent) => {
     e.preventDefault();
     if (newProfessor.trim()) {
-      mockDbService.addProfessor({ nome: newProfessor.trim() });
+      dbService.addProfessor({ nome: newProfessor.trim() });
       setNewProfessor('');
-      setProfessores(mockDbService.getProfessores());
+      setProfessores(dbService.getProfessores());
       showNotification('Professor adicionado com sucesso!');
     }
   };
@@ -434,9 +257,9 @@ const AdminPage: React.FC = () => {
   const handleAddAluno = (e: React.FormEvent) => {
     e.preventDefault();
     if (newAluno.trim()) {
-      mockDbService.addAluno({ nome: newAluno.trim() });
+      dbService.addAluno({ nome: newAluno.trim() });
       setNewAluno('');
-      setAlunos(mockDbService.getAlunos());
+      setAlunos(dbService.getAlunos());
       showNotification('Aluno adicionado com sucesso!');
     }
   };
@@ -444,8 +267,8 @@ const AdminPage: React.FC = () => {
   const handleMatricularAluno = (e: React.FormEvent) => {
     e.preventDefault();
     if (alunoParaMatricular && selectedTurma) {
-      mockDbService.addMatricula({ alunoId: alunoParaMatricular, turmaId: selectedTurma });
-      setAlunosNaTurma(mockDbService.getAlunosByTurma(selectedTurma));
+      dbService.addMatricula({ alunoId: alunoParaMatricular, turmaId: selectedTurma });
+      setAlunosNaTurma(dbService.getAlunosByTurma(selectedTurma));
       setAlunoParaMatricular('');
       showNotification('Aluno matriculado com sucesso!');
     }
@@ -457,8 +280,8 @@ const AdminPage: React.FC = () => {
       const turma = turmasOfSelectedSerie.find(t => t.id === selectedTurma);
       if (turma) {
         const updatedProfessorIds = [...turma.professorIds, professorParaAssociar];
-        mockDbService.updateTurma(selectedTurma, { professorIds: updatedProfessorIds });
-        setProfessoresNaTurma(mockDbService.getProfessoresByTurma(selectedTurma));
+        dbService.updateTurma(selectedTurma, { professorIds: updatedProfessorIds });
+        setProfessoresNaTurma(dbService.getProfessoresByTurma(selectedTurma));
         setProfessorParaAssociar('');
         showNotification('Professor associado com sucesso!');
       }
@@ -469,9 +292,9 @@ const AdminPage: React.FC = () => {
   const handleAddProvao = (e: React.FormEvent) => {
     e.preventDefault();
     if (newProvaoName.trim() && selectedTurma) {
-      mockDbService.addProvao({ nome: newProvaoName.trim(), turmaId: selectedTurma, data: new Date().toISOString() });
+      dbService.addProvao({ nome: newProvaoName.trim(), turmaId: selectedTurma, data: new Date().toISOString() });
       setNewProvaoName('');
-      setProvoes(mockDbService.getProvoesByTurma(selectedTurma));
+      setProvoes(dbService.getProvoesByTurma(selectedTurma));
       showNotification('Provão criado com sucesso!');
     }
   };
@@ -479,7 +302,7 @@ const AdminPage: React.FC = () => {
   const handleAddQuestao = (e: React.FormEvent) => {
     e.preventDefault();
     if (newQuestaoDesc.trim() && newQuestaoHab.trim() && selectedProvao) {
-      mockDbService.addQuestao({
+      dbService.addQuestao({
         provaoId: selectedProvao,
         disciplina: newQuestaoDisciplina,
         descricao: newQuestaoDesc.trim(),
@@ -487,13 +310,13 @@ const AdminPage: React.FC = () => {
       });
       setNewQuestaoDesc('');
       setNewQuestaoHab('');
-      setQuestoes(mockDbService.getQuestoesByProvao(selectedProvao));
+      setQuestoes(dbService.getQuestoesByProvao(selectedProvao));
       showNotification('Questão adicionada com sucesso!');
     }
   };
 
   const handleSetGabarito = (questaoId: string, resposta: Alternativa) => {
-    mockDbService.addGabarito({ questaoId, respostaCorreta: resposta });
+    dbService.addGabarito({ questaoId, respostaCorreta: resposta });
     const newGabaritos = new Map(gabaritos);
     newGabaritos.set(questaoId, resposta);
     setGabaritos(newGabaritos);

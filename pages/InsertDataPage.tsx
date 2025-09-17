@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-// import { Link } from 'react-router-dom'; // Removido para evitar erro de contexto do roteador
+import { dbService } from '../services/dbService';
+import { Escola, Serie, Turma, Professor, Aluno, Provao, Questao, Alternativa, Disciplina } from '../types';
+
 
 // --- Mock Components for demonstration ---
 const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
@@ -24,60 +26,14 @@ const Button = ({ children, onClick, type = 'button', disabled = false }: {
     </button>
 );
 
-// --- Mock DB Service for demonstration ---
-const dbService = {
-    addScore: async (data: any) => {
-        console.log("Salvando no DB:", data);
-        // Simula uma pequena demora da rede
-        await new Promise(resolve => setTimeout(resolve, 200));
-        return { success: true, data };
-    }
-};
-
-
-// --- ESTRUTURA DE DADOS ---
-const schoolData = {
-    escolas: {
-        'E.M. Lucas Marciano Da Silva': {
-            series: {
-                '8º Ano': {
-                    turmas: {
-                        'Turma 1': {
-                            alunos: ['Aleph Zapata Pereira Alvarenga', 'Beatriz Martins', 'Carlos Eduardo'],
-                            professores: { 'Doriedson': 'Matemática', 'Victor': 'Português' },
-                        },
-                        'Turma 2': {
-                            alunos: ['Ana Beatriz Damasceno De Jesus', 'Daniela Faria', 'Eduardo Costa'],
-                            professores: { 'Taynara': 'Matemática', 'Victor': 'Português' },
-                        },
-                    },
-                },
-                '6º Ano': {
-                    turmas: {
-                        'Turma 1': {
-                            alunos: ['Gabriel Pereira', 'Helena Souza', 'Igor Andrade'],
-                            professores: { 'Doriedson': 'Matemática', 'Alessandra': 'Português' },
-                        },
-                    },
-                }
-            },
-        },
-    },
-    habilidades: {
-        'Matemática': ['EF07MA01A', 'EF07MA03', 'EF07MA40MG', 'EF05MA14', 'EF05MA15'],
-        'Português': ['EF69LP42', 'EF05LP07', 'EF35LP26', 'EF69LP54', 'EF08LP13'],
-    },
-};
-
-type RespostaAlternativa = 'A' | 'B' | 'C' | 'D';
-const alternativas: RespostaAlternativa[] = ['A', 'B', 'C', 'D'];
+const alternativas: Alternativa[] = ['A', 'B', 'C', 'D'];
 
 // --- COMPONENTES REUTILIZÁVEIS ---
 interface SelectFieldProps {
     label: string;
     value: string;
     onChange: (value: string) => void;
-    options: string[];
+    options: { value: string; label: string }[];
     placeholder: string;
     disabled?: boolean;
 }
@@ -93,7 +49,7 @@ const SelectField: React.FC<SelectFieldProps> = ({ label, value, onChange, optio
         >
             <option value="">{placeholder}</option>
             {options.map((opt) => (
-                <option key={opt} value={opt}>{opt}</option>
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
         </select>
     </div>
@@ -101,21 +57,71 @@ const SelectField: React.FC<SelectFieldProps> = ({ label, value, onChange, optio
 
 // --- PÁGINA PRINCIPAL ---
 const InsertDataPage: React.FC = () => {
+    // Estados para os dados do BD
+    const [escolas, setEscolas] = useState<Escola[]>([]);
+    const [series, setSeries] = useState<Serie[]>([]);
+    const [turmas, setTurmas] = useState<Turma[]>([]);
+    const [alunos, setAlunos] = useState<Aluno[]>([]);
+    const [professores, setProfessores] = useState<Professor[]>([]);
+    const [provoes, setProvoes] = useState<Provao[]>([]);
+    const [questoes, setQuestoes] = useState<Questao[]>([]);
+
     // Estados para os seletores do formulário
-    const [escola, setEscola] = useState('');
-    const [serie, setSerie] = useState('');
-    const [turma, setTurma] = useState('');
-    const [aluno, setAluno] = useState('');
-    const [professor, setProfessor] = useState('');
-    const [disciplina, setDisciplina] = useState('');
+    const [selectedEscola, setSelectedEscola] = useState('');
+    const [selectedSerie, setSelectedSerie] = useState('');
+    const [selectedTurma, setSelectedTurma] = useState('');
+    const [selectedProvao, setSelectedProvao] = useState('');
+    const [selectedAluno, setSelectedAluno] = useState('');
 
     // Estado para as respostas das questões
-    const [respostas, setRespostas] = useState<{ [key: string]: RespostaAlternativa | null }>({});
+    const [respostas, setRespostas] = useState<Map<string, Alternativa>>(new Map());
 
     // Estados para feedback ao usuário
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+
+    // Carregar dados iniciais
+    useEffect(() => {
+        setEscolas(dbService.getEscolas());
+    }, []);
+
+    // Efeitos em cascata para carregar os dados
+    useEffect(() => {
+        if (selectedEscola) setSeries(dbService.getSeriesByEscola(selectedEscola));
+        else setSeries([]);
+        setSelectedSerie('');
+    }, [selectedEscola]);
+
+    useEffect(() => {
+        if (selectedSerie) setTurmas(dbService.getTurmasBySerie(selectedSerie));
+        else setTurmas([]);
+        setSelectedTurma('');
+    }, [selectedSerie]);
+
+    useEffect(() => {
+        if (selectedTurma) {
+            setAlunos(dbService.getAlunosByTurma(selectedTurma));
+            setProfessores(dbService.getProfessoresByTurma(selectedTurma));
+            setProvoes(dbService.getProvoesByTurma(selectedTurma));
+        } else {
+            setAlunos([]);
+            setProfessores([]);
+            setProvoes([]);
+        }
+        setSelectedProvao('');
+        setSelectedAluno('');
+    }, [selectedTurma]);
+
+    useEffect(() => {
+        if (selectedProvao) {
+            setQuestoes(dbService.getQuestoesByProvao(selectedProvao));
+        } else {
+            setQuestoes([]);
+        }
+        setRespostas(new Map());
+    }, [selectedProvao]);
+
 
     // Limpa as mensagens de feedback após 3 segundos
     useEffect(() => {
@@ -128,39 +134,8 @@ const InsertDataPage: React.FC = () => {
         }
     }, [success, error]);
 
-    // --- LÓGICA PARA POPULAR OS SELECTS DINAMICAMENTE ---
-    const escolas = Object.keys(schoolData.escolas);
-    const series = escola ? Object.keys(schoolData.escolas[escola]?.series || {}) : [];
-    const turmas = serie ? Object.keys(schoolData.escolas[escola]?.series[serie]?.turmas || {}) : [];
-    const alunos = turma ? schoolData.escolas[escola]?.series[serie]?.turmas[turma]?.alunos || [] : [];
-    const professores = turma ? Object.keys(schoolData.escolas[escola]?.series[serie]?.turmas[turma]?.professores || {}) : [];
-    const questoes = disciplina ? schoolData.habilidades[disciplina] || [] : [];
-
-    // --- FUNÇÕES DE CALLBACK OTIMIZADAS ---
-    const resetFields = useCallback((level: 'escola' | 'serie' | 'turma') => {
-        if (level === 'escola') setSerie('');
-        if (level === 'escola' || level === 'serie') setTurma('');
-        if (level === 'escola' || level === 'serie' || level === 'turma') {
-            setAluno('');
-            setProfessor('');
-            setDisciplina('');
-            setRespostas({});
-        }
-    }, []);
-
-    const handleProfessorChange = (prof: string) => {
-        setProfessor(prof);
-        if (prof && turma && serie && escola) {
-            const disc = schoolData.escolas[escola].series[serie].turmas[turma].professores[prof];
-            setDisciplina(disc);
-        } else {
-            setDisciplina('');
-        }
-        setRespostas({});
-    };
-
-    const handleRespostaChange = useCallback((questao: string, valor: RespostaAlternativa) => {
-        setRespostas((prev) => ({ ...prev, [questao]: valor }));
+    const handleRespostaChange = useCallback((questaoId: string, valor: Alternativa) => {
+        setRespostas(prev => new Map(prev).set(questaoId, valor));
     }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -168,37 +143,53 @@ const InsertDataPage: React.FC = () => {
         setError('');
         setSuccess('');
 
-        if (!escola || !serie || !turma || !aluno || !professor || !disciplina) {
+        if (!selectedEscola || !selectedSerie || !selectedTurma || !selectedAluno || !selectedProvao) {
             setError('Todos os campos de identificação devem ser preenchidos.');
             return;
         }
 
-        const respostasMarcadas = Object.values(respostas).filter(r => r !== null);
-        if (questoes.length > 0 && respostasMarcadas.length !== questoes.length) {
+        if (questoes.length > 0 && respostas.size !== questoes.length) {
             setError('Todas as questões devem ter uma alternativa selecionada.');
             return;
         }
 
         setIsLoading(true);
         try {
-            const dadosParaSalvar = questoes.map((questao) => ({
-                escola,
-                serie,
-                turma,
-                aluno,
-                professor,
-                disciplina,
-                habilidade: questao,
-                resposta: respostas[questao], // Salva a alternativa 'A', 'B', 'C' ou 'D'
-            }));
+            const escola = escolas.find(e => e.id === selectedEscola);
+            const serie = series.find(s => s.id === selectedSerie);
+            const aluno = alunos.find(a => a.id === selectedAluno);
 
-            await Promise.all(dadosParaSalvar.map(dado => dbService.addScore(dado)));
+            if (!escola || !serie || !aluno) {
+                throw new Error("Dados de escola, série ou aluno não encontrados");
+            }
+
+            for (const questao of questoes) {
+                const resposta = respostas.get(questao.id);
+                const gabarito = dbService.getGabaritoByQuestao(questao.id);
+
+                if (resposta && gabarito) {
+                    const scoreValue = resposta === gabarito.respostaCorreta ? 1 : 0;
+
+                    // NOTE: The current database schema does not associate a professor with a specific subject in a class.
+                    // As a result, we are assigning the first professor found for the class to the score.
+                    // This is a known limitation.
+                    const professor = professores.length > 0 ? professores[0] : undefined;
+
+                    await dbService.addScore({
+                        school: escola.nome,
+                        grade: serie.nome,
+                        student: aluno.nome,
+                        teacher: professor ? professor.nome : 'N/A',
+                        subject: questao.disciplina,
+                        questionCode: questao.habilidade_codigo,
+                        score: scoreValue,
+                    });
+                }
+            }
 
             setSuccess('Dados inseridos com sucesso!');
-
-            // Resetar o formulário
-            setAluno('');
-            setRespostas({});
+            setSelectedAluno('');
+            setRespostas(new Map());
 
         } catch (err) {
             setError('Ocorreu um erro ao salvar os dados.');
@@ -220,35 +211,33 @@ const InsertDataPage: React.FC = () => {
                     </h2>
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <SelectField label="Escola" value={escola} onChange={(v) => { setEscola(v); resetFields('escola'); }} options={escolas} placeholder="Selecione a Escola" />
-                            <SelectField label="Série/Ano" value={serie} onChange={(v) => { setSerie(v); resetFields('serie'); }} options={series} placeholder="Selecione a Série" disabled={!escola} />
-                            <SelectField label="Turma" value={turma} onChange={(v) => { setTurma(v); resetFields('turma'); }} options={turmas} placeholder="Selecione a Turma" disabled={!serie} />
-                            <SelectField label="Professor(a)" value={professor} onChange={handleProfessorChange} options={professores} placeholder="Selecione o Professor" disabled={!turma} />
-                            <SelectField label="Aluno(a)" value={aluno} onChange={setAluno} options={alunos} placeholder="Selecione o Aluno" disabled={!turma} />
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Disciplina</label>
-                                <input type="text" value={disciplina} readOnly disabled className="w-full border rounded p-2 bg-gray-100" />
-                            </div>
+                            <SelectField label="Escola" value={selectedEscola} onChange={setSelectedEscola} options={escolas.map(e => ({ value: e.id, label: e.nome }))} placeholder="Selecione a Escola" />
+                            <SelectField label="Série/Ano" value={selectedSerie} onChange={setSelectedSerie} options={series.map(s => ({ value: s.id, label: s.nome }))} placeholder="Selecione a Série" disabled={!selectedEscola} />
+                            <SelectField label="Turma" value={selectedTurma} onChange={setSelectedTurma} options={turmas.map(t => ({ value: t.id, label: t.nome }))} placeholder="Selecione a Turma" disabled={!selectedSerie} />
+                            <SelectField label="Provão" value={selectedProvao} onChange={setSelectedProvao} options={provoes.map(p => ({ value: p.id, label: p.nome }))} placeholder="Selecione o Provão" disabled={!selectedTurma} />
+                            <SelectField label="Aluno(a)" value={selectedAluno} onChange={setSelectedAluno} options={alunos.map(a => ({ value: a.id, label: a.nome }))} placeholder="Selecione o Aluno" disabled={!selectedTurma} />
                         </div>
 
-                        {disciplina && (
+                        {selectedProvao && (
                             <div className="border-t pt-4 mt-4">
                                 <label className="block text-base font-semibold text-gray-800 mb-3">Habilidades (Questões)</label>
                                 {questoes.length === 0 ? (
-                                    <p className="text-sm text-gray-500">Nenhuma habilidade encontrada para esta disciplina.</p>
+                                    <p className="text-sm text-gray-500">Nenhuma questão encontrada para este provão.</p>
                                 ) : (
                                     <div className="space-y-3">
                                         {questoes.map((q) => (
-                                            <div key={q} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 rounded-md bg-gray-50 border">
-                                                <span className="font-mono text-sm font-medium text-gray-900 mb-2 sm:mb-0">{q}</span>
-                                                <div className="flex items-center space-x-2">
+                                            <div key={q.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 rounded-md bg-gray-50 border">
+                                                <div className="flex-1">
+                                                    <p className="font-mono text-sm font-medium text-gray-900 mb-1">{q.habilidade_codigo}</p>
+                                                    <p className="text-xs text-gray-600">{q.descricao}</p>
+                                                </div>
+                                                <div className="flex items-center space-x-2 mt-2 sm:mt-0">
                                                     {alternativas.map(alt => (
                                                         <button
                                                             key={alt}
                                                             type="button"
-                                                            onClick={() => handleRespostaChange(q, alt)}
-                                                            className={`w-8 h-8 rounded-full text-sm font-bold transition-colors ${respostas[q] === alt ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                                                            onClick={() => handleRespostaChange(q.id, alt)}
+                                                            className={`w-8 h-8 rounded-full text-sm font-bold transition-colors ${respostas.get(q.id) === alt ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
                                                         >
                                                             {alt}
                                                         </button>
