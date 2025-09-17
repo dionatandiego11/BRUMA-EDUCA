@@ -43,6 +43,7 @@ export interface Professor {
 export interface Aluno {
   id: string;
   nome: string;
+  matricula: string;
 }
 
 export interface Matricula {

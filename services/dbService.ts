@@ -70,36 +70,122 @@ const saveDB = (db: BrumaEducaDB): void => {
 
 const initialize = (): void => {
   const db = getDB();
-  // Check if DB is already initialized
+  // To re-seed, clear localStorage by calling: localStorage.removeItem('brumaEducaDB');
   if (db.escolas.length > 0) {
     return;
   }
 
-  // Seed data
-  const prof1: Professor = { id: 'prof1', nome: 'Doriedson' };
-  const prof2: Professor = { id: 'prof2', nome: 'Victor' };
-  const prof3: Professor = { id: 'prof3', nome: 'Taynara' };
-  db.professores.push(prof1, prof2, prof3);
+  // --- 1. Professors ---
+  const profDoriedson: Professor = { id: 'prof1', nome: 'Doriedson' };
+  const profAlessandra: Professor = { id: 'prof2', nome: 'Alessandra' };
+  db.professores.push(profDoriedson, profAlessandra);
 
-  const escola1: Escola = { id: 'esc1', nome: 'E.M. Lucas Marciano Da Silva' };
-  db.escolas.push(escola1);
+  // --- 2. School ---
+  const escola: Escola = { id: 'esc1', nome: 'ESCOLA MUNICIPAL "LUCAS MARCIANO DA SILVA"' };
+  db.escolas.push(escola);
 
-  const serie1: Serie = { id: 'serie1', nome: '8º Ano', escolaId: 'esc1' };
-  const serie2: Serie = { id: 'serie2', nome: '6º Ano', escolaId: 'esc1' };
-  db.series.push(serie1, serie2);
+  // --- 3. Series / Grade ---
+  const serie6ano: Serie = { id: 'serie1', nome: '6º ano', escolaId: escola.id };
+  db.series.push(serie6ano);
 
-  const turma1: Turma = { id: 'turma1', nome: 'Turma 1', serieId: 'serie1', professorIds: ['prof1', 'prof2'] };
-  const turma2: Turma = { id: 'turma2', nome: 'Turma 2', serieId: 'serie1', professorIds: ['prof3', 'prof2'] };
-  db.turmas.push(turma1, turma2);
+  // --- 4. Turma / Class ---
+  const turma1: Turma = {
+    id: 'turma1',
+    nome: '1',
+    serieId: serie6ano.id,
+    professorIds: [profDoriedson.id, profAlessandra.id]
+  };
+  db.turmas.push(turma1);
 
-  const aluno1: Aluno = { id: 'aluno1', nome: 'Aleph Zapata Pereira Alvarenga' };
-  const aluno2: Aluno = { id: 'aluno2', nome: 'Beatriz Martins' };
-  const aluno3: Aluno = { id: 'aluno3', nome: 'Ana Beatriz Damasceno De Jesus' };
-  db.alunos.push(aluno1, aluno2, aluno3);
+  // --- 5. Alunos / Students ---
+  const studentsData = [
+    { matricula: '1496', nome: 'Álvaro Eduardo Menezes Souza' },
+    { matricula: '5476', nome: 'Aquiles Braga Oliveira' },
+    { matricula: '4929', nome: 'Bruno Deivid De Jesus Ferreira Santos' },
+    { matricula: 'N/A', nome: 'Camile Ariane Souza Maia' },
+    { matricula: '1393', nome: 'Érika Batista Da Silva' },
+    { matricula: '13940', nome: 'Gabrielle Lopes Nogueira' },
+    { matricula: '14626', nome: 'Gabrielly Vitoria Cimiano Da Costa' },
+    { matricula: '1312', nome: 'Jhennyfer Márcia Rodrigues Silva' },
+    { matricula: '15387', nome: 'João Pedro Amorim Pereira' },
+    { matricula: '1414', nome: 'Laura Bianca Cruz Jardim' },
+    { matricula: '1320', nome: 'Leticia Pires Martins' },
+    { matricula: '5578', nome: 'Lourdes Maria Alves Santos' },
+    { matricula: '4890', nome: 'Luciano Júnio Ribeiro Melo' },
+    { matricula: '17081', nome: 'Milena Lopes De Oliveira' },
+    { matricula: '1373', nome: 'Raissa Karolaine Silva Freitas' },
+    { matricula: '5475', nome: 'Sophia Emanuelly Silva' },
+    { matricula: '1445', nome: 'Sthefany Martins Batista' },
+    { matricula: '6133', nome: 'Verônica Gabrielle Silva Oliveira' },
+    { matricula: '1274', nome: 'Wryel Celso Esperendeus Parreiras' }
+  ];
 
-  db.matriculas.push({ id: 'mat1', alunoId: 'aluno1', turmaId: 'turma1' });
-  db.matriculas.push({ id: 'mat2', alunoId: 'aluno2', turmaId: 'turma1' });
-  db.matriculas.push({ id: 'mat3', alunoId: 'aluno3', turmaId: 'turma2' });
+  const alunos = studentsData.map((data, index) => {
+    const aluno: Aluno = { id: `aluno${index + 1}`, nome: data.nome, matricula: data.matricula };
+    db.alunos.push(aluno);
+    return aluno;
+  });
+
+  // --- 6. Matriculas / Enrollments ---
+  alunos.forEach((aluno, index) => {
+    const matricula: Matricula = { id: `mat${index + 1}`, alunoId: aluno.id, turmaId: turma1.id };
+    db.matriculas.push(matricula);
+  });
+
+  // --- 7. Provao / Test ---
+  const provao: Provao = {
+    id: 'provao1',
+    nome: 'Avaliação Diagnóstica - 1º Bimestre',
+    turmaId: turma1.id,
+    data: new Date().toISOString()
+  };
+  db.provoes.push(provao);
+
+  // --- 8. Questoes e Gabaritos / Questions and Answer Keys ---
+  const gabaritoMatematica: Alternativa[] = ['C', 'D', 'D', 'B', 'D', 'B', 'C', 'C', 'C', 'B', 'B', 'A', 'C', 'C', 'C', 'D', 'D', 'A', 'D', 'B'];
+  const gabaritoPortugues: Alternativa[] = ['B', 'B', 'C', 'B', 'C', 'D', 'A', 'B', 'B', 'C', 'D', 'A', 'B', 'A', 'C', 'A', 'A', 'D', 'A', 'C'];
+
+  let questaoIdCounter = 1;
+
+  // Matemática
+  gabaritoMatematica.forEach((resposta, index) => {
+    const questao: Questao = {
+      id: `q${questaoIdCounter}`,
+      provaoId: provao.id,
+      disciplina: 'Matemática',
+      descricao: `Questão ${index + 1} de Matemática`,
+      habilidade_codigo: `M${String(index + 1).padStart(2, '0')}`
+    };
+    db.questoes.push(questao);
+
+    const gabarito: Gabarito = {
+      id: `gab${questaoIdCounter}`,
+      questaoId: questao.id,
+      respostaCorreta: resposta
+    };
+    db.gabaritos.push(gabarito);
+    questaoIdCounter++;
+  });
+
+  // Língua Portuguesa
+  gabaritoPortugues.forEach((resposta, index) => {
+    const questao: Questao = {
+      id: `q${questaoIdCounter}`,
+      provaoId: provao.id,
+      disciplina: 'Português',
+      descricao: `Questão ${index + 1} de Língua Portuguesa`,
+      habilidade_codigo: `P${String(index + 1).padStart(2, '0')}`
+    };
+    db.questoes.push(questao);
+
+    const gabarito: Gabarito = {
+      id: `gab${questaoIdCounter}`,
+      questaoId: questao.id,
+      respostaCorreta: resposta
+    };
+    db.gabaritos.push(gabarito);
+    questaoIdCounter++;
+  });
 
   saveDB(db);
 };
