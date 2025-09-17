@@ -4,6 +4,7 @@ import { Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
 import HomePage from './pages/HomePage';
 import InsertDataPage from './pages/InsertDataPage';
+import InsertTestPage from './pages/InsertTestPage';
 import ResultsPage from './pages/ResultsPage';
 import { dbService } from './services/dbService';
 
@@ -20,6 +21,7 @@ function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/inserir-dados" element={<InsertDataPage />} />
+          <Route path="/inserir-prova" element={<InsertTestPage />} />
           <Route path="/resultados" element={<ResultsPage />} />
         </Routes>
       </main>
