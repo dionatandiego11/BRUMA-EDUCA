@@ -14,11 +14,19 @@ const schoolData = {
         '8º Ano': {
           turmas: {
             'Turma 1': {
-              alunos: ['Aleph Zapata Pereira Alvarenga', 'Beatriz Martins', 'Carlos Eduardo'],
+              alunos: [
+                { nome: 'Aleph Zapata Pereira Alvarenga', matricula: 'MAT001' },
+                { nome: 'Beatriz Martins', matricula: 'MAT002' },
+                { nome: 'Carlos Eduardo', matricula: 'MAT003' }
+              ],
               professores: { 'Doriedson': 'Matemática', 'Victor': 'Português' },
             },
             'Turma 2': {
-              alunos: ['Ana Beatriz Damasceno De Jesus', 'Daniela Faria', 'Eduardo Costa'],
+              alunos: [
+                { nome: 'Ana Beatriz Damasceno De Jesus', matricula: 'MAT004' },
+                { nome: 'Daniela Faria', matricula: 'MAT005' },
+                { nome: 'Eduardo Costa', matricula: 'MAT006' }
+              ],
               professores: { 'Taynara': 'Matemática', 'Victor': 'Português' },
             },
           },
@@ -26,7 +34,11 @@ const schoolData = {
         '6º Ano': {
             turmas: {
               'Turma 1': {
-                alunos: ['Gabriel Pereira', 'Helena Souza', 'Igor Andrade'],
+                alunos: [
+                  { nome: 'Gabriel Pereira', matricula: 'MAT007' },
+                  { nome: 'Helena Souza', matricula: 'MAT008' },
+                  { nome: 'Igor Andrade', matricula: 'MAT009' }
+                ],
                 professores: { 'Doriedson': 'Matemática', 'Alessandra': 'Português' },
               },
             },
@@ -76,6 +88,7 @@ const InsertDataPage: React.FC = () => {
   const [serie, setSerie] = useState('');
   const [turma, setTurma] = useState('');
   const [aluno, setAluno] = useState('');
+  const [matricula, setMatricula] = useState('');
   const [professor, setProfessor] = useState('');
   const [disciplina, setDisciplina] = useState('');
 
@@ -103,6 +116,7 @@ const InsertDataPage: React.FC = () => {
   const series = escola ? Object.keys(schoolData.escolas[escola]?.series || {}) : [];
   const turmas = serie ? Object.keys(schoolData.escolas[escola]?.series[serie]?.turmas || {}) : [];
   const alunos = turma ? schoolData.escolas[escola]?.series[serie]?.turmas[turma]?.alunos || [] : [];
+  const alunoNomes = alunos.map(a => a.nome);
   const professores = turma ? Object.keys(schoolData.escolas[escola]?.series[serie]?.turmas[turma]?.professores || {}) : [];
   const questoes = disciplina ? schoolData.habilidades[disciplina] || [] : [];
 
@@ -112,11 +126,24 @@ const InsertDataPage: React.FC = () => {
     if (level === 'escola' || level === 'serie') setTurma('');
     if (level === 'escola' || level === 'serie' || level === 'turma') {
       setAluno('');
+      setMatricula('');
       setProfessor('');
       setDisciplina('');
       setRespostas({});
     }
   }, []);
+
+  const handleAlunoChange = (nomeAluno: string) => {
+    setAluno(nomeAluno);
+    if (nomeAluno) {
+      const alunoSelecionado = alunos.find(a => a.nome === nomeAluno);
+      if (alunoSelecionado) {
+        setMatricula(alunoSelecionado.matricula);
+      }
+    } else {
+      setMatricula('');
+    }
+  };
 
   const handleProfessorChange = (prof: string) => {
     setProfessor(prof);
@@ -194,8 +221,13 @@ const InsertDataPage: React.FC = () => {
             <SelectField label="Série/Ano" value={serie} onChange={(v) => { setSerie(v); resetFields('serie'); }} options={series} placeholder="Selecione a Série" disabled={!escola} />
             <SelectField label="Turma" value={turma} onChange={(v) => { setTurma(v); resetFields('turma'); }} options={turmas} placeholder="Selecione a Turma" disabled={!serie} />
             <SelectField label="Professor(a)" value={professor} onChange={handleProfessorChange} options={professores} placeholder="Selecione o Professor" disabled={!turma} />
-            <SelectField label="Aluno(a)" value={aluno} onChange={setAluno} options={alunos} placeholder="Selecione o Aluno" disabled={!turma} />
+            <SelectField label="Aluno(a)" value={aluno} onChange={handleAlunoChange} options={alunoNomes} placeholder="Selecione o Aluno" disabled={!turma} />
             
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Matrícula</label>
+              <input type="text" value={matricula} readOnly disabled className="w-full border rounded p-2 bg-gray-100" />
+            </div>
+
             {/* Campo de disciplina é preenchido automaticamente */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Disciplina</label>
