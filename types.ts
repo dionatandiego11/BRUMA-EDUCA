@@ -1,13 +1,24 @@
 
-export interface Score {
+export interface Prova {
   id: string;
+  name: string;
+  discipline: 'Matemática' | 'Português';
+  questions: {
+    code: string;
+    answer: 'A' | 'B' | 'C' | 'D';
+  }[];
+}
+
+export interface Score {
+  id:string;
   school: string;
   grade: string;
   student: string;
   teacher: string;
   subject: string;
   questionCode: string;
-  score: number; // 1 for correct, 0 for incorrect
+  answer: string; // 'A', 'B', 'C', or 'D'
+  testId: string;
   date: string;
 }
 

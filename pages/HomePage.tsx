@@ -21,6 +21,12 @@ const ChartBarIcon = () => (
     </svg>
 );
 
+const BookOpenIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto mb-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+    </svg>
+);
+
 const HomePage: React.FC = () => {
   return (
     <div className="text-center">
@@ -33,12 +39,12 @@ const HomePage: React.FC = () => {
         <Link to="/inserir-dados" className="group">
           <Card>
             <DocumentAddIcon />
-            <h3 className="text-2xl font-semibold mb-2 text-slate-800">Inserir Dados</h3>
+            <h3 className="text-2xl font-semibold mb-2 text-slate-800">Inserir Dados de Alunos</h3>
             <p className="text-slate-500 mb-4">
-              Clique aqui para registrar as notas e informações das avaliações dos alunos.
+              Clique aqui para registrar as respostas das avaliações dos alunos.
             </p>
             <div className="flex items-center justify-center text-primary font-semibold group-hover:underline">
-              <span>Começar Inserção</span>
+              <span>Lançar Resultados</span>
               <ArrowRightIcon />
             </div>
           </Card>
@@ -48,7 +54,7 @@ const HomePage: React.FC = () => {
             <ChartBarIcon />
             <h3 className="text-2xl font-semibold mb-2 text-slate-800">Ver Resultados</h3>
             <p className="text-slate-500 mb-4">
-              Acesse os gráficos e relatórios para visualizar o desempenho por escola, série ou aluno.
+              Acesse os gráficos e relatórios para visualizar o desempenho geral.
             </p>
             <div className="flex items-center justify-center text-primary font-semibold group-hover:underline">
                <span>Analisar Desempenho</span>
@@ -56,6 +62,25 @@ const HomePage: React.FC = () => {
             </div>
           </Card>
         </Link>
+      </div>
+
+      <div className="mt-16">
+        <h3 className="text-2xl font-bold text-slate-800 mb-4">Painel Administrativo</h3>
+        <div className="grid md:grid-cols-1 gap-8 max-w-xl mx-auto">
+            <Link to="/inserir-prova" className="group">
+                <Card>
+                    <BookOpenIcon />
+                    <h3 className="text-2xl font-semibold mb-2 text-slate-800">Inserir Prova</h3>
+                    <p className="text-slate-500 mb-4">
+                        Crie e configure novas provas, definindo as questões e seus gabaritos.
+                    </p>
+                    <div className="flex items-center justify-center text-primary font-semibold group-hover:underline">
+                        <span>Criar Nova Prova</span>
+                        <ArrowRightIcon />
+                    </div>
+                </Card>
+            </Link>
+        </div>
       </div>
     </div>
   );
