@@ -20,6 +20,11 @@ const Header: React.FC = () => {
             Sistema de Avaliação de Desempenho
           </h1>
         </Link>
+        <div className="flex items-center gap-4">
+            <Link to="/admin" className="text-white hover:text-gray-200 transition-colors">
+                Administrativo
+            </Link>
+        </div>
       </nav>
     </header>
   );

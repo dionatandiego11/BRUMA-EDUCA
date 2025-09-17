@@ -5,6 +5,7 @@ import Header from './components/Header';
 import HomePage from './pages/HomePage';
 import InsertDataPage from './pages/InsertDataPage';
 import ResultsPage from './pages/ResultsPage';
+import AdminPage from './pages/AdminPage';
 import { dbService } from './services/dbService';
 
 function App() {
@@ -21,6 +22,7 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/inserir-dados" element={<InsertDataPage />} />
           <Route path="/resultados" element={<ResultsPage />} />
+          <Route path="/admin" element={<AdminPage />} />
         </Routes>
       </main>
       <footer className="text-center p-4 text-slate-500 text-sm">
