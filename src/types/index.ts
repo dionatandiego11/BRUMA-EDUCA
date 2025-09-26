@@ -1,7 +1,7 @@
 // src/types/index.ts 
 
 export type Disciplina = 'Português' | 'Matemática';
-export type Alternativa = 'A' | 'B' | 'C' | 'D';
+export type Alternativa = 'A' | 'B' | 'C' | 'D' | 'E';
 
 // Interface base com campos comuns
 interface BaseEntity {
@@ -10,8 +10,7 @@ interface BaseEntity {
   updated_at?: string;
 }
 
-// ------------------ ENTIDADES PRINCIPAIS ------------------
-
+// Entidades principais
 export interface Escola extends BaseEntity {
   nome: string;
   codigo_inep: string;
@@ -39,12 +38,10 @@ export interface Aluno extends BaseEntity {
   matricula: string;
 }
 
-// Interface Provao atualizada para suportar múltiplas turmas
 export interface Provao extends BaseEntity {
   nome: string;
   data?: string;
   descricao?: string;
-  // O campo `turma_id` foi removido para usar a tabela de relacionamento ProvaoTurma
 }
 
 export interface Questao extends BaseEntity {
@@ -55,8 +52,7 @@ export interface Questao extends BaseEntity {
   provao?: Provao;
 }
 
-// ------------------ TABELAS DE RELACIONAMENTO ------------------
-
+// Tabelas de relacionamento
 export interface Gabarito extends BaseEntity {
   questao_id: string;
   resposta_correta: Alternativa;
@@ -86,16 +82,7 @@ export interface Score extends BaseEntity {
   questao?: Questao;
 }
 
-// Tabela de relacionamento entre provões e turmas (N:N)
-export interface ProvaoTurma extends BaseEntity {
-  provao_id: string;
-  turma_id: string;
-  provao?: Provao;
-  turma?: Turma;
-}
-
-// ------------------ DTOS (DATA TRANSFER OBJECTS) ------------------
-
+// Tipos para formulários e DTOs
 export interface CreateEscolaDTO {
   nome: string;
   codigo_inep: string;
@@ -110,7 +97,7 @@ export interface CreateSerieDTO {
 export interface CreateTurmaDTO {
   nome: string;
   serieId: string;
-  professorIds?: string[];
+  professorIds?: string[]; 
 }
 
 export interface CreateProfessorDTO {
@@ -122,16 +109,16 @@ export interface CreateAlunoDTO {
   matricula: string;
 }
 
-export interface CreateProvaoMultiTurmaDTO {
+export interface CreateProvaoDTO {
   nome: string;
-  descricao?: string;
   turmaIds: string[];
 }
 
 export interface UpdateProvaoDTO {
-  nome?: string;
-  descricao?: string;
+  nome: string;
+  turmaIds: string[];
 }
+
 
 export interface CreateQuestaoDTO {
   provaoId: string;
@@ -148,6 +135,7 @@ export interface CreateGabaritoDTO {
 export interface CreateMatriculaDTO {
   alunoId: string;
   turmaId: string;
+  data_matricula?: string;
   ativo?: boolean;
 }
 
@@ -155,17 +143,12 @@ export interface CreateScoreDTO {
   alunoId: string;
   questaoId: string;
   resposta: Alternativa;
+  date?: string;
 }
 
-// ------------------ TIPOS COM RELACIONAMENTOS (JOIN) ------------------
-
-export interface TurmaCompleta extends Turma {
-  serie: Serie & {
-    escola: Escola;
-  };
-}
-
-export interface TurmaComDetalhes extends TurmaCompleta {
+// Tipos para respostas com relacionamentos
+export interface TurmaComDetalhes extends Turma {
+  serie: Serie & { escola: Escola };
   matriculas: Array<{ aluno: Aluno }>;
   turmas_professores: Array<{ professor: Professor }>;
   provoes: Provao[];
@@ -175,13 +158,7 @@ export interface ProvaoComQuestoes extends Provao {
   questoes: Array<Questao & { gabarito?: Gabarito }>;
 }
 
-export interface ProvaoComTurmas extends Provao {
-  turmas: TurmaCompleta[];
-}
-
-
-// ------------------ ESTATÍSTICAS E RELATÓRIOS ------------------
-
+// Tipos para estatísticas e relatórios
 export interface EstatisticasAluno {
   aluno: Aluno;
   total_questoes: number;
@@ -198,7 +175,7 @@ export interface EstatisticasAluno {
 export interface EstatisticasTurma {
   turma: Turma;
   total_alunos: number;
-  media_geral: number;
+  media_geral: number; 
   por_provao: {
     provao: Provao;
     media: number;
@@ -206,54 +183,7 @@ export interface EstatisticasTurma {
   }[];
 }
 
-export interface EstatisticasProvao {
-  provao: Provao;
-  total_turmas: number;
-  total_alunos: number;
-  total_questoes: number;
-  media_geral: number;
-  por_turma: {
-    turma: TurmaCompleta;
-    total_alunos: number;
-    media_turma: number;
-    participantes: number;
-  }[];
-  por_disciplina: {
-    disciplina: Disciplina;
-    total_questoes: number;
-    media_acerto: number;
-  }[];
-}
-
-export interface RankingProvao {
-  posicao: number;
-  aluno: Aluno;
-  turma: TurmaCompleta;
-  total_questoes: number;
-  questoes_corretas: number;
-  percentual_acerto: number;
-  por_disciplina: {
-    disciplina: Disciplina;
-    corretas: number;
-    total: number;
-    percentual: number;
-  }[];
-}
-
-export interface ResultadoProvao {
-  provao: Provao;
-  turmas: TurmaCompleta[];
-  estatisticas: EstatisticasProvao;
-  ranking: RankingProvao[];
-  participacao: {
-    total_alunos_elegiveis: number;
-    total_alunos_participantes: number;
-    percentual_participacao: number;
-  };
-}
-
-// ------------------ ENUMS E TIPOS AUXILIARES ------------------
-
+// Enums para status e validações
 export enum StatusMatricula {
   ATIVA = 'ativa',
   INATIVA = 'inativa',
@@ -266,6 +196,7 @@ export enum TipoUsuario {
   ALUNO = 'aluno'
 }
 
+// Tipos de erro customizados
 export interface ErrorResponse {
   code: string;
   message: string;
