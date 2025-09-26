@@ -288,7 +288,7 @@ class DatabaseService {
     }
   }
 
-  // ------------------ PROVÕES ------------------
+  // ------------------ PROVÕES (LEGADO - MONO-TURMA) ------------------
   async getProvoesByTurma(turmaId: string): Promise<Provao[]> {
     const { data, error } = await supabase
       .from('provoes')
@@ -325,6 +325,219 @@ class DatabaseService {
     return data
   }
 
+  // ------------------ PROVÕES MULTI-TURMA ------------------
+
+  /**
+   * Busca todas as turmas com informações completas (série e escola)
+   */
+  async getTodasTurmasCompletas(): Promise<Array<Turma & { 
+    serie: Serie & { escola: Escola } 
+  }>> {
+    const { data, error } = await supabase
+      .from('turmas')
+      .select(`
+        *,
+        serie:series(
+          *,
+          escola:escolas(*)
+        )
+      `)
+      .order('nome');
+
+    if (error) {
+      console.error('Erro ao buscar turmas completas:', error);
+      throw new Error(`Falha ao buscar turmas completas: ${error.message}`);
+    }
+
+    return data || [];
+  }
+
+  /**
+   * Busca todos os provões (não mais limitado por turma)
+   */
+  async getTodosProvoes(): Promise<Provao[]> {
+    const { data, error } = await supabase
+      .from('provoes')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Erro ao buscar provões:', error);
+      throw new Error(`Falha ao buscar provões: ${error.message}`);
+    }
+
+    return data || [];
+  }
+
+  /**
+   * Cria um provão associado a múltiplas turmas
+   */
+  async createProvaoMultiTurma(dto: {
+    nome: string;
+    descricao?: string;
+    turmaIds: string[];
+  }): Promise<Provao> {
+    try {
+      // Primeiro cria o provão
+      const { data: provao, error: provaoError } = await supabase
+        .from('provoes')
+        .insert({
+          nome: dto.nome,
+          descricao: dto.descricao || null
+        })
+        .select()
+        .single();
+
+      if (provaoError) {
+        console.error('Erro ao criar provão:', provaoError);
+        throw new Error(`Falha ao criar provão: ${provaoError.message}`);
+      }
+
+      // Depois associa às turmas
+      if (dto.turmaIds.length > 0) {
+        const associacoes = dto.turmaIds.map(turmaId => ({
+          provao_id: provao.id,
+          turma_id: turmaId
+        }));
+
+        const { error: associacaoError } = await supabase
+          .from('provoes_turmas')
+          .insert(associacoes);
+
+        if (associacaoError) {
+          // Se falhar, remove o provão criado
+          await supabase.from('provoes').delete().eq('id', provao.id);
+          console.error('Erro ao associar turmas:', associacaoError);
+          throw new Error(`Falha ao associar turmas: ${associacaoError.message}`);
+        }
+      }
+
+      return provao;
+    } catch (error: any) {
+      console.error('Erro em createProvaoMultiTurma:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Busca turmas associadas a um provão
+   */
+  async getTurmasByProvao(provaoId: string): Promise<Array<Turma & { 
+    serie: Serie & { escola: Escola } 
+  }>> {
+    const { data, error } = await supabase
+      .from('provoes_turmas')
+      .select(`
+        turma:turmas(
+          *,
+          serie:series(
+            *,
+            escola:escolas(*)
+          )
+        )
+      `)
+      .eq('provao_id', provaoId);
+
+    if (error) {
+      console.error('Erro ao buscar turmas do provão:', error);
+      throw new Error(`Falha ao buscar turmas do provão: ${error.message}`);
+    }
+
+    return data?.map((item: any) => item.turma) || [];
+  }
+
+  /**
+   * Busca provões de uma turma específica
+   */
+  async getProvoesByTurmaNew(turmaId: string): Promise<Provao[]> {
+    const { data, error } = await supabase
+      .from('provoes_turmas')
+      .select(`
+        provao:provoes(*)
+      `)
+      .eq('turma_id', turmaId);
+
+    if (error) {
+      console.error('Erro ao buscar provões da turma:', error);
+      throw new Error(`Falha ao buscar provões da turma: ${error.message}`);
+    }
+
+    return data?.map((item: any) => item.provao) || [];
+  }
+
+  /**
+   * Remove associação de uma turma com um provão
+   */
+  async removeProvaoTurma(provaoId: string, turmaId: string): Promise<void> {
+    const { error } = await supabase
+      .from('provoes_turmas')
+      .delete()
+      .eq('provao_id', provaoId)
+      .eq('turma_id', turmaId);
+
+    if (error) {
+      console.error('Erro ao remover associação provão-turma:', error);
+      throw new Error(`Falha ao remover associação: ${error.message}`);
+    }
+  }
+
+  /**
+   * Adiciona uma turma a um provão existente
+   */
+  async addTurmaToProvao(provaoId: string, turmaId: string): Promise<void> {
+    const { error } = await supabase
+      .from('provoes_turmas')
+      .insert({
+        provao_id: provaoId,
+        turma_id: turmaId
+      });
+
+    if (error) {
+      if (error.code === '23505') {
+        throw new Error('Esta turma já está associada a este provão');
+      }
+      console.error('Erro ao associar turma ao provão:', error);
+      throw new Error(`Falha ao associar turma: ${error.message}`);
+    }
+  }
+
+  /**
+   * Atualiza informações do provão
+   */
+  async updateProvao(provaoId: string, updates: {
+    nome?: string;
+    descricao?: string;
+  }): Promise<Provao> {
+    const { data, error } = await supabase
+      .from('provoes')
+      .update(updates)
+      .eq('id', provaoId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Erro ao atualizar provão:', error);
+      throw new Error(`Falha ao atualizar provão: ${error.message}`);
+    }
+
+    return data;
+  }
+
+  /**
+   * Deleta um provão e todas suas associações
+   */
+  async deleteProvao(provaoId: string): Promise<void> {
+    const { error } = await supabase
+      .from('provoes')
+      .delete()
+      .eq('id', provaoId);
+
+    if (error) {
+      console.error('Erro ao deletar provão:', error);
+      throw new Error(`Falha ao deletar provão: ${error.message}`);
+    }
+  }
+  
   // ------------------ QUESTÕES ------------------
   async getQuestoesByProvao(provaoId: string): Promise<Questao[]> {
     const { data, error } = await supabase
@@ -362,8 +575,6 @@ class DatabaseService {
     
     return data
   }
-
-  // ------------------ MÉTODOS ADICIONAIS PARA QUESTÕES ------------------
   
   async updateQuestao(questaoId: string, dto: { 
     habilidade_codigo: string; 
@@ -391,7 +602,6 @@ class DatabaseService {
   }
 
   async deleteQuestao(questaoId: string): Promise<void> {
-    // Primeiro remove o gabarito se existir
     const { error: gabaritoError } = await supabase
       .from('gabaritos')
       .delete()
@@ -402,7 +612,6 @@ class DatabaseService {
       throw new Error(`Falha ao remover gabarito: ${gabaritoError.message}`)
     }
 
-    // Remove os scores relacionados
     const { error: scoresError } = await supabase
       .from('scores')
       .delete()
@@ -413,7 +622,6 @@ class DatabaseService {
       throw new Error(`Falha ao remover scores: ${scoresError.message}`)
     }
 
-    // Finalmente remove a questão
     const { error: questaoError } = await supabase
       .from('questoes')
       .delete()
@@ -426,7 +634,6 @@ class DatabaseService {
   }
 
   async reorderQuestoes(questaoIds: string[]): Promise<void> {
-    // Atualiza a ordem das questões
     const updates = questaoIds.map((id, index) => ({
       id,
       ordem: index + 1
@@ -510,11 +717,10 @@ class DatabaseService {
     return data;
   }
 
-  // ------------------ MÉTODOS OTIMIZADOS PARA RESULTS ------------------
+  // ------------------ MÉTODOS OTIMIZADOS E ATUALIZADOS PARA RESULTS ------------------
 
   async getScoresByTurmaAndProvao(turmaId: string, provaoId: string): Promise<any[]> {
     try {
-      // Primeiro, busca os IDs dos alunos matriculados na turma
       const { data: matriculas, error: errorMatriculas } = await supabase
         .from('matriculas')
         .select('aluno_id')
@@ -526,13 +732,8 @@ class DatabaseService {
       }
 
       const alunoIds = matriculas?.map(m => m.aluno_id) || [];
-      
-      // Se não há alunos, retorna array vazio
-      if (alunoIds.length === 0) {
-        return [];
-      }
+      if (alunoIds.length === 0) return [];
 
-      // Busca os IDs das questões do provão
       const { data: questaoIdsData, error: errorQuestoes } = await supabase
         .from('questoes')
         .select('id')
@@ -543,20 +744,11 @@ class DatabaseService {
       }
 
       const questaoIds = questaoIdsData?.map(q => q.id) || [];
-      
-      // Se não há questões, retorna array vazio
-      if (questaoIds.length === 0) {
-        return [];
-      }
+      if (questaoIds.length === 0) return [];
 
-      // Agora busca os scores com os IDs obtidos
       const { data: scores, error: errorScores } = await supabase
         .from('scores')
-        .select(`
-          *,
-          aluno:alunos(*),
-          questao:questoes(*)
-        `)
+        .select(`*, aluno:alunos(*), questao:questoes(*)`)
         .in('aluno_id', alunoIds)
         .in('questao_id', questaoIds);
 
@@ -574,7 +766,6 @@ class DatabaseService {
 
   async getGabaritosByProvao(provaoId: string): Promise<Map<string, Alternativa>> {
     try {
-      // Primeiro busca as questões do provão
       const { data: questaoIdsData, error: errorQuestoes } = await supabase
         .from('questoes')
         .select('id')
@@ -585,18 +776,11 @@ class DatabaseService {
       }
 
       const questaoIds = questaoIdsData?.map(q => q.id) || [];
-      
-      if (questaoIds.length === 0) {
-        return new Map();
-      }
+      if (questaoIds.length === 0) return new Map();
 
-      // Busca os gabaritos para essas questões
       const { data: gabaritos, error: errorGabaritos } = await supabase
         .from('gabaritos')
-        .select(`
-          resposta_correta,
-          questao_id
-        `)
+        .select(`resposta_correta, questao_id`)
         .in('questao_id', questaoIds);
 
       if (errorGabaritos) {
@@ -615,6 +799,66 @@ class DatabaseService {
       throw error;
     }
   }
+  
+  /**
+   * Versão atualizada para buscar scores considerando múltiplas turmas do provão
+   */
+  async getScoresByProvaoNew(provaoId: string): Promise<any[]> {
+    try {
+      const { data: turmasProvao, error: turmasError } = await supabase
+        .from('provoes_turmas')
+        .select('turma_id')
+        .eq('provao_id', provaoId);
+
+      if (turmasError) {
+        throw new Error(`Falha ao buscar turmas do provão: ${turmasError.message}`);
+      }
+
+      const turmaIds = turmasProvao?.map(tp => tp.turma_id) || [];
+      if (turmaIds.length === 0) return [];
+
+      const { data: matriculas, error: matriculasError } = await supabase
+        .from('matriculas')
+        .select('aluno_id')
+        .in('turma_id', turmaIds)
+        .eq('ativo', true);
+
+      if (matriculasError) {
+        throw new Error(`Falha ao buscar matrículas: ${matriculasError.message}`);
+      }
+
+      const alunoIds = matriculas?.map(m => m.aluno_id) || [];
+      if (alunoIds.length === 0) return [];
+
+      const { data: questaoIdsData, error: questoesError } = await supabase
+        .from('questoes')
+        .select('id')
+        .eq('provao_id', provaoId);
+
+      if (questoesError) {
+        throw new Error(`Falha ao buscar questões: ${questoesError.message}`);
+      }
+
+      const questaoIds = questaoIdsData?.map(q => q.id) || [];
+      if (questaoIds.length === 0) return [];
+
+      const { data: scores, error: scoresError } = await supabase
+        .from('scores')
+        .select(`*, aluno:alunos(*), questao:questoes(*)`)
+        .in('aluno_id', alunoIds)
+        .in('questao_id', questaoIds);
+
+      if (scoresError) {
+        console.error('Erro ao buscar scores do provão:', scoresError);
+        throw new Error(`Falha ao buscar scores: ${scoresError.message}`);
+      }
+
+      return scores || [];
+    } catch (error) {
+      console.error('Erro em getScoresByProvaoNew:', error);
+      throw error;
+    }
+  }
 
   async getDadosResultados(turmaId: string, provaoId: string): Promise<{
     alunos: Aluno[];
@@ -627,9 +871,9 @@ class DatabaseService {
       
       const [alunos, questoes, scores, gabaritos] = await Promise.all([
         this.getAlunosByTurma(turmaId),
-        this.getQuestoesByProvao(provaId),
+        this.getQuestoesByProvao(provaoId),
         this.getScoresByTurmaAndProvao(turmaId, provaoId),
-        this.getGabaritosByProvao(provaId)
+        this.getGabaritosByProvao(provaoId)
       ]);
 
       console.timeEnd('getDadosResultados');
@@ -647,6 +891,66 @@ class DatabaseService {
       throw error;
     }
   }
+  
+  /**
+   * Busca dados consolidados para resultados do provão multi-turma
+   */
+  async getDadosResultadosProvao(provaoId: string): Promise<{
+    provao: Provao;
+    turmas: Array<Turma & { serie: Serie & { escola: Escola } }>;
+    alunos: Aluno[];
+    questoes: Questao[];
+    scores: any[];
+    gabaritos: Map<string, Alternativa>;
+  }> {
+    try {
+      console.time('getDadosResultadosProvao');
+      
+      const { data: provao, error: provaoError } = await supabase
+        .from('provoes')
+        .select('*')
+        .eq('id', provaoId)
+        .single();
+
+      if (provaoError || !provao) {
+        throw new Error('Provão não encontrado');
+      }
+
+      const [turmas, questoes, scores, gabaritos] = await Promise.all([
+        this.getTurmasByProvao(provaoId),
+        this.getQuestoesByProvao(provaoId),
+        this.getScoresByProvaoNew(provaoId),
+        this.getGabaritosByProvao(provaoId)
+      ]);
+
+      const turmaIds = turmas.map(t => t.id);
+      const alunosPromises = turmaIds.map(turmaId => this.getAlunosByTurma(turmaId));
+      const alunosPorTurma = await Promise.all(alunosPromises);
+      
+      const alunosMap = new Map<string, Aluno>();
+      alunosPorTurma.flat().forEach(aluno => {
+        alunosMap.set(aluno.id, aluno);
+      });
+      const alunos = Array.from(alunosMap.values());
+
+      console.timeEnd('getDadosResultadosProvao');
+      
+      console.log('Dados consolidados do provão carregados:', {
+        provao: provao.nome,
+        turmas: turmas.length,
+        alunos: alunos.length,
+        questões: questoes.length,
+        scores: scores.length,
+        gabaritos: gabaritos.size
+      });
+
+      return { provao, turmas, alunos, questoes, scores, gabaritos };
+    } catch (error) {
+      console.error('Erro em getDadosResultadosProvao:', error);
+      throw error;
+    }
+  }
+
 
   // ------------------ MÉTODOS PARA ESTATÍSTICAS ------------------
 
@@ -657,7 +961,6 @@ class DatabaseService {
     percentual_acerto: number;
     distribuicao_respostas: Record<Alternativa, number>;
   }> {
-    // Busca a questão e gabarito
     const { data: questao, error: questaoError } = await supabase
       .from('questoes')
       .select('*, gabarito:gabaritos(*)')
@@ -668,7 +971,6 @@ class DatabaseService {
       throw new Error(`Falha ao buscar questão: ${questaoError.message}`)
     }
 
-    // Busca todos os scores para esta questão
     const { data: scores, error: scoresError } = await supabase
       .from('scores')
       .select('resposta')
@@ -707,7 +1009,6 @@ class DatabaseService {
   }
 
   async getEstatisticasAluno(alunoId: string, provaoId?: string): Promise<EstatisticasAluno> {
-    // Busca aluno
     const { data: aluno, error: alunoError } = await supabase
       .from('alunos')
       .select('*')
@@ -719,7 +1020,6 @@ class DatabaseService {
         throw new Error('Aluno não encontrado');
     }
       
-    // Constrói a query de scores
     let scoreQuery = supabase
       .from('scores')
       .select(`
@@ -756,7 +1056,6 @@ class DatabaseService {
       }
     }
       
-    // Calcula estatísticas
     const estatisticasPorDisciplina = new Map<string, { total: number; corretas: number }>()
     let totalCorretas = 0
       
@@ -795,7 +1094,6 @@ class DatabaseService {
   }
 
   async getEstatisticasTurma(turmaId: string, provaoId?: string): Promise<EstatisticasTurma> {
-    // Busca detalhes da turma e alunos matriculados
     const { data: turma, error: turmaError } = await supabase
       .from('turmas')
       .select('*, serie:series(*, escola:escolas(*)), matriculas(aluno:alunos(*))')
@@ -821,7 +1119,6 @@ class DatabaseService {
       return emptyStats;
     }
   
-    // Busca todos os scores relevantes
     let scoresQuery = supabase
       .from('scores')
       .select('*, questao:questoes(*, gabarito:gabaritos(*))')
@@ -842,7 +1139,6 @@ class DatabaseService {
     }
     if (!allScores || allScores.length === 0) return emptyStats;
   
-    // Processa os dados em memória
     const statsPorAluno = new Map<string, { corretas: number; total: number }>();
 
     allScores.forEach((score: any) => {
