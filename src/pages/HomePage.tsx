@@ -1,16 +1,11 @@
 // src/pages/HomePage.tsx
-
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { GraduationCap, School, ClipboardList, BarChart3, ClipboardEdit } from 'lucide-react';
-import type { Page } from '../App';
 import Card from '../components/Card';
 import Button from '../components/Button';
 
-interface HomePageProps {
-  onNavigate: (page: Page) => void;
-}
-
-const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
+const HomePage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center p-4 relative overflow-hidden">
       <div className="absolute inset-0 opacity-5">
@@ -31,57 +26,65 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
-          <Card className="group" onClick={() => onNavigate('admin')}>
-            <div className="text-center p-8 flex flex-col h-full">
-              <School size={64} className="mx-auto text-blue-600 mb-6 group-hover:scale-110 transition-transform duration-300 drop-shadow-md" />
-              <h2 className="text-3xl font-bold text-gray-800 mb-3">Painel Administrativo</h2>
-              <p className="text-gray-600 mb-6 leading-relaxed flex-grow">
-                Gerencie escolas, séries, turmas, professores e alunos.
-              </p>
-              <Button className="w-full mt-auto bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
-                Acessar Painel
-              </Button>
-            </div>
-          </Card>
+          <Link to="/admin">
+            <Card className="group h-full">
+              <div className="text-center p-8 flex flex-col h-full">
+                <School size={64} className="mx-auto text-blue-600 mb-6 group-hover:scale-110 transition-transform duration-300 drop-shadow-md" />
+                <h2 className="text-3xl font-bold text-gray-800 mb-3">Painel Administrativo</h2>
+                <p className="text-gray-600 mb-6 leading-relaxed flex-grow">
+                  Gerencie escolas, séries, turmas, professores e alunos.
+                </p>
+                <Button as="span" className="w-full mt-auto bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
+                  Acessar Painel
+                </Button>
+              </div>
+            </Card>
+          </Link>
 
-          <Card className="group" onClick={() => onNavigate('createProvao')}>
-            <div className="text-center p-8 flex flex-col h-full">
-              <ClipboardEdit size={64} className="mx-auto text-orange-600 mb-6 group-hover:scale-110 transition-transform duration-300 drop-shadow-md" />
-              <h2 className="text-3xl font-bold text-gray-800 mb-3">Gerenciar Provas</h2>
-              <p className="text-gray-600 mb-6 leading-relaxed flex-grow">
-                Crie avaliações, adicione questões e associe a múltiplas turmas.
-              </p>
-              <Button className="w-full mt-auto bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
-                Criar e Editar
-              </Button>
-            </div>
-          </Card>
+          <Link to="/provas">
+            <Card className="group h-full">
+              <div className="text-center p-8 flex flex-col h-full">
+                <ClipboardEdit size={64} className="mx-auto text-orange-600 mb-6 group-hover:scale-110 transition-transform duration-300 drop-shadow-md" />
+                <h2 className="text-3xl font-bold text-gray-800 mb-3">Gerenciar Provas</h2>
+                <p className="text-gray-600 mb-6 leading-relaxed flex-grow">
+                  Crie avaliações, adicione questões e associe a múltiplas turmas.
+                </p>
+                <Button as="span" className="w-full mt-auto bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
+                  Criar e Editar
+                </Button>
+              </div>
+            </Card>
+          </Link>
 
-          <Card className="group" onClick={() => onNavigate('insert')}>
-            <div className="text-center p-8 flex flex-col h-full">
-              <ClipboardList size={64} className="mx-auto text-green-600 mb-6 group-hover:scale-110 transition-transform duration-300 drop-shadow-md" />
-              <h2 className="text-3xl font-bold text-gray-800 mb-3">Inserir Resultados</h2>
-              <p className="text-gray-600 mb-6 leading-relaxed flex-grow">
-                Registre as respostas dos alunos nas avaliações para análise de desempenho.
-              </p>
-              <Button variant="success" className="w-full mt-auto bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
-                Inserir Dados
-              </Button>
-            </div>
-          </Card>
+          <Link to="/inserir-dados">
+            <Card className="group h-full">
+              <div className="text-center p-8 flex flex-col h-full">
+                <ClipboardList size={64} className="mx-auto text-green-600 mb-6 group-hover:scale-110 transition-transform duration-300 drop-shadow-md" />
+                <h2 className="text-3xl font-bold text-gray-800 mb-3">Inserir Resultados</h2>
+                <p className="text-gray-600 mb-6 leading-relaxed flex-grow">
+                  Registre as respostas dos alunos nas avaliações para análise de desempenho.
+                </p>
+                <Button as="span" variant="success" className="w-full mt-auto bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
+                  Inserir Dados
+                </Button>
+              </div>
+            </Card>
+          </Link>
 
-          <Card className="group" onClick={() => onNavigate('results')}>
-            <div className="text-center p-8 flex flex-col h-full">
-              <BarChart3 size={64} className="mx-auto text-purple-600 mb-6 group-hover:scale-110 transition-transform duration-300 drop-shadow-md" />
-              <h2 className="text-3xl font-bold text-gray-800 mb-3">Resultados do Provão</h2>
-              <p className="text-gray-600 mb-6 leading-relaxed flex-grow">
-                Visualize rankings, análises e estatísticas detalhadas dos provões aplicados.
-              </p>
-              <Button className="w-full mt-auto bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-semibold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
-                Ver Resultados
-              </Button>
-            </div>
-          </Card>
+          <Link to="/resultados">
+            <Card className="group h-full">
+              <div className="text-center p-8 flex flex-col h-full">
+                <BarChart3 size={64} className="mx-auto text-purple-600 mb-6 group-hover:scale-110 transition-transform duration-300 drop-shadow-md" />
+                <h2 className="text-3xl font-bold text-gray-800 mb-3">Resultados do Provão</h2>
+                <p className="text-gray-600 mb-6 leading-relaxed flex-grow">
+                  Visualize rankings, análises e estatísticas detalhadas dos provões aplicados.
+                </p>
+                <Button as="span" className="w-full mt-auto bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-semibold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
+                  Ver Resultados
+                </Button>
+              </div>
+            </Card>
+          </Link>
         </div>
 
         <div className="text-center">

@@ -1,37 +1,24 @@
 // src/App.tsx
-
-import React, { useState } from 'react';
+import React from 'react';
+import { Routes, Route } from 'react-router-dom';
 
 import HomePage from './pages/HomePage';
 import AdminPage from './pages/AdminPage';
 import InsertDataPage from './pages/InsertDataPage';
 import ResultsPage from './pages/ResultsPage';
 import CreateProvaoPage from './pages/CreateProvaoPage';
-
-export type Page = 'home' | 'admin' | 'insert' | 'results' | 'createProvao';
+import Layout from './components/Layout'; // Um novo componente de Layout que será criado
 
 const App: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState<Page>('home');
-
-  const renderPage = () => {
-    switch (currentPage) {
-      case 'admin':
-        return <AdminPage onNavigate={setCurrentPage} />;
-      case 'insert':
-        return <InsertDataPage onNavigate={setCurrentPage} />;
-      case 'results':
-        return <ResultsPage onNavigate={setCurrentPage} />;
-      case 'createProvao':
-        return <CreateProvaoPage onNavigate={setCurrentPage} />;
-      case 'home':
-      default:
-        return <HomePage onNavigate={setCurrentPage} />;
-    }
-  };
-
   return (
     <div className="antialiased text-slate-800">
-      {renderPage()}
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/admin" element={<Layout><AdminPage /></Layout>} />
+        <Route path="/provas" element={<Layout><CreateProvaoPage /></Layout>} />
+        <Route path="/inserir-dados" element={<Layout><InsertDataPage /></Layout>} />
+        <Route path="/resultados" element={<Layout><ResultsPage /></Layout>} />
+      </Routes>
     </div>
   );
 };

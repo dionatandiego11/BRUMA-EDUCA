@@ -1,24 +1,33 @@
+// src/components/Button.tsx
 import React from 'react';
 
-interface ButtonProps {
+// Este é um padrão comum para criar componentes polimórficos em React com TypeScript.
+// Ele permite que o componente `Button` renderize como diferentes elementos HTML.
+type PropsOf<C extends keyof JSX.IntrinsicElements | React.JSXElementConstructor<any>> =
+  JSX.LibraryManagedAttributes<C, React.ComponentPropsWithoutRef<C>>;
+
+type ButtonProps<C extends React.ElementType> = {
+  /**
+   * O elemento a ser renderizado. Pode ser 'button', 'a', 'span', etc.
+   * @default 'button'
+   */
+  as?: C;
   children: React.ReactNode;
-  onClick?: React.MouseEventHandler<HTMLButtonElement>;
-  type?: 'button' | 'submit';
-  disabled?: boolean;
   variant?: 'primary' | 'secondary' | 'success' | 'danger';
   size?: 'sm' | 'md' | 'lg';
   className?: string;
-}
+} & Omit<PropsOf<C>, 'as' | 'children' | 'className'>;
 
-const Button: React.FC<ButtonProps> = ({
+const Button = <C extends React.ElementType = 'button'>({
+  as,
   children,
-  onClick,
-  type = 'button',
-  disabled = false,
   variant = 'primary',
   size = 'md',
-  className = ''
-}) => {
+  className = '',
+  ...props
+}: ButtonProps<C>) => {
+  const Component = as || 'button';
+
   const baseClasses = 'font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 flex items-center justify-center';
   const variants = {
     primary: 'bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500',
@@ -32,15 +41,15 @@ const Button: React.FC<ButtonProps> = ({
     lg: 'px-6 py-3 text-lg'
   };
 
+  const isDisabled = (props as any).disabled;
+
   return (
-    <button
-      type={type}
-      onClick={onClick}
-      disabled={disabled}
-      className={`${baseClasses} ${variants[variant]} ${sizes[size]} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}
+    <Component
+      className={`${baseClasses} ${variants[variant]} ${sizes[size]} ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}
+      {...props}
     >
       {children}
-    </button>
+    </Component>
   );
 };
 
