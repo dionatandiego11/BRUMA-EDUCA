@@ -1,6 +1,6 @@
 // src/App.tsx
-
 import React, { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'; // Instale: npm i react-router-dom @types/react-router-dom
 
 import HomePage from './pages/HomePage';
 import AdminPage from './pages/AdminPage';
@@ -10,7 +10,21 @@ import CreateProvaoPage from './pages/CreateProvaoPage';
 
 export type Page = 'home' | 'admin' | 'insert' | 'results' | 'createProvao';
 
-const App: React.FC = () => {
+// Componente para proteger rotas
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        Carregando...
+      </div>
+    );
+  }
+  return user ? <>{children}</> : <Navigate to="/login" replace />;
+};
+
+// Conteúdo principal da aplicação
+const AppContent: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>('home');
 
   const renderPage = () => {
@@ -30,9 +44,30 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="antialiased text-slate-800">
-      {renderPage()}
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+
+        {/* Rota protegida principal */}
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <div className="antialiased text-slate-800">{renderPage()}</div>
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+    </Router>
+  );
+};
+
+// App com AuthProvider
+const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 };
 

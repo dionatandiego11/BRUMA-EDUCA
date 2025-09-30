@@ -78,7 +78,7 @@ const InsertDataPage: React.FC<InsertDataPageProps> = ({ onNavigate }) => {
             respostasExistentes[questao.id] = score ? score.resposta : null;
           }));
           setRespostas(respostasExistentes);
-        } catch (err) { showNotification('Falha ao buscar questões ou respostas.', 'error'); }
+  } catch { showNotification('Falha ao buscar questões ou respostas.', 'error'); }
       } else {
         setQuestoes([]);
         setRespostas({});
@@ -96,13 +96,13 @@ const InsertDataPage: React.FC<InsertDataPageProps> = ({ onNavigate }) => {
     try {
       await dbService.addScore({ alunoId: selectedAluno, questaoId: questaoId, resposta: valor });
       showNotification(`Resposta da questão salva!`, 'success');
-    } catch (err) {
+    } catch {
       showNotification('Erro ao salvar resposta.', 'error');
       setRespostas(prev => ({ ...prev, [questaoId]: null }));
     }
   }, [selectedAluno]);
   
-  const alternativas: Alternativa[] = ['A', 'B', 'C', 'D', 'E'];
+  const alternativas: Alternativa[] = ['A', 'B', 'C', 'D'];
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">

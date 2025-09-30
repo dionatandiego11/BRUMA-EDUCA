@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
-  ArrowLeft, FilePlus2, Edit, Trash2, CheckCircle, AlertCircle, X, Plus, 
-  Hash, Save, ChevronDown, ChevronRight 
+  ArrowLeft, Edit, Trash2, CheckCircle, AlertCircle, X, Plus, 
+  Save, ChevronDown, ChevronRight 
 } from 'lucide-react';
 import type { Page } from '../App';
 import type {
@@ -28,6 +28,7 @@ const CreateProvaoPage: React.FC<{ onNavigate: (page: Page) => void }> = ({ onNa
   const [questoes, setQuestoes] = useState<Questao[]>([]);
   const [newQuestao, setNewQuestao] = useState({ habilidade_codigo: '', disciplina: 'Português' as Disciplina });
   const [editingQuestao, setEditingQuestao] = useState<Questao | null>(null);
+  const [editForm, setEditForm] = useState({ habilidade_codigo: '', disciplina: 'Português' as Disciplina });
   const [gabaritos, setGabaritos] = useState<Map<string, Alternativa>>(new Map());
 
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -40,15 +41,19 @@ const CreateProvaoPage: React.FC<{ onNavigate: (page: Page) => void }> = ({ onNa
   const loadProvoes = useCallback(async () => {
     try {
       setProvoes(await dbService.getProvoes());
-    } catch (e: any) {
-      showNotification(e.message, 'error');
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      showNotification(msg, 'error');
     }
   }, [showNotification]);
 
   useEffect(() => {
     loadProvoes();
-    dbService.getEscolas().then(setEscolas).catch(e => showNotification(e.message, 'error'));
-  }, [loadProvoes]);
+    dbService.getEscolas().then(setEscolas).catch(e => {
+      const msg = e instanceof Error ? e.message : String(e);
+      showNotification(msg, 'error');
+    });
+  }, [loadProvoes, showNotification]);
 
   useEffect(() => {
     const fetchProvaoData = async () => {
@@ -69,8 +74,9 @@ const CreateProvaoPage: React.FC<{ onNavigate: (page: Page) => void }> = ({ onNa
           }
           setGabaritos(loadedGabaritos);
 
-        } catch (e: any) {
-          showNotification(e.message, 'error');
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          showNotification(msg, 'error');
         }
       } else {
         setQuestoes([]);
@@ -115,8 +121,9 @@ const CreateProvaoPage: React.FC<{ onNavigate: (page: Page) => void }> = ({ onNa
         showNotification('Provão criado com sucesso!');
       }
       loadProvoes();
-    } catch (e: any) {
-      showNotification(e.message, 'error');
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      showNotification(msg, 'error');
     }
   };
 
@@ -133,8 +140,47 @@ const CreateProvaoPage: React.FC<{ onNavigate: (page: Page) => void }> = ({ onNa
         setNewQuestao({ habilidade_codigo: '', disciplina: 'Português' });
         setQuestoes(await dbService.getQuestoesByProvao(selectedProvao.id));
         showNotification('Questão adicionada!');
-      } catch (err: any) { showNotification(err.message, 'error'); }
+  } catch (err) { const msg = err instanceof Error ? err.message : String(err); showNotification(msg, 'error'); }
     }
+  };
+
+  const handleEditQuestao = (questao: Questao) => {
+    setEditingQuestao(questao);
+    setEditForm({
+      habilidade_codigo: questao.habilidade_codigo,
+      disciplina: questao.disciplina
+    });
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingQuestao || !editForm.habilidade_codigo.trim()) {
+      showNotification('Código da habilidade é obrigatório', 'error');
+      return;
+    }
+
+    try {
+      await dbService.updateQuestao(editingQuestao.id, {
+        habilidade_codigo: editForm.habilidade_codigo.trim(),
+        disciplina: editForm.disciplina
+      });
+      
+      // Recarregar as questões para refletir as mudanças
+      if (selectedProvao) {
+        setQuestoes(await dbService.getQuestoesByProvao(selectedProvao.id));
+      }
+      
+      setEditingQuestao(null);
+      showNotification('Questão atualizada com sucesso!');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      showNotification(msg, 'error');
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingQuestao(null);
+    setEditForm({ habilidade_codigo: '', disciplina: 'Português' });
   };
 
   const handleDeleteQuestao = async (questaoId: string) => {
@@ -143,7 +189,7 @@ const CreateProvaoPage: React.FC<{ onNavigate: (page: Page) => void }> = ({ onNa
             await dbService.deleteQuestao(questaoId);
             setQuestoes(questoes.filter(q => q.id !== questaoId));
             showNotification('Questão excluída!', 'success');
-        } catch(e: any) { showNotification(e.message, 'error') }
+  } catch(e) { const msg = e instanceof Error ? e.message : String(e); showNotification(msg, 'error') }
     }
   }
 
@@ -152,9 +198,10 @@ const CreateProvaoPage: React.FC<{ onNavigate: (page: Page) => void }> = ({ onNa
         await dbService.addGabarito({ questaoId, respostaCorreta: resposta });
         setGabaritos(new Map(gabaritos.set(questaoId, resposta)));
         showNotification('Gabarito salvo.', 'success');
-    } catch (e:any) {
-        showNotification(e.message, 'error');
-    }
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    showNotification(msg, 'error');
+  }
   }
 
   const TurmaSelector = () => {
@@ -232,6 +279,46 @@ const CreateProvaoPage: React.FC<{ onNavigate: (page: Page) => void }> = ({ onNa
           <button onClick={() => setNotification(null)}><X size={18} /></button>
         </div>
       )}
+
+      {/* Modal de Edição */}
+      {editingQuestao && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-bold mb-4">Editar Questão</h3>
+            <form onSubmit={handleSaveEdit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Código da Habilidade</label>
+                <Input
+                  placeholder="Código da Habilidade (ex: EF15LP03)"
+                  value={editForm.habilidade_codigo}
+                  onChange={e => setEditForm({...editForm, habilidade_codigo: e.target.value})}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Disciplina</label>
+                <Select
+                  value={editForm.disciplina}
+                  onChange={e => setEditForm({...editForm, disciplina: e.target.value as Disciplina})}
+                >
+                  <option value="Português">Português</option>
+                  <option value="Matemática">Matemática</option>
+                </Select>
+              </div>
+              <div className="flex gap-3 pt-4">
+                <Button type="submit" className="flex-1">
+                  <Save size={16} className="mr-2" />
+                  Salvar
+                </Button>
+                <Button type="button" onClick={handleCancelEdit} className="flex-1 bg-gray-500 hover:bg-gray-600">
+                  <X size={16} className="mr-2" />
+                  Cancelar
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-5xl mx-auto">
         <button onClick={() => onNavigate('home')} className="flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium py-2 px-4 rounded-lg hover:bg-blue-100 transition-all mb-8">
           <ArrowLeft size={20} /> Voltar para Home
@@ -281,13 +368,18 @@ const CreateProvaoPage: React.FC<{ onNavigate: (page: Page) => void }> = ({ onNa
                                     <div className="flex justify-between items-start">
                                         <p className="font-semibold">Questão {index + 1}: {q.habilidade_codigo}</p>
                                         <div className="flex gap-2">
-                                            <button onClick={() => handleDeleteQuestao(q.id)} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button>
+                                            <button onClick={() => handleEditQuestao(q)} className="text-blue-500 hover:text-blue-700" title="Editar questão">
+                                                <Edit size={16}/>
+                                            </button>
+                                            <button onClick={() => handleDeleteQuestao(q.id)} className="text-red-500 hover:text-red-700" title="Excluir questão">
+                                                <Trash2 size={16}/>
+                                            </button>
                                         </div>
                                     </div>
                                     <p className="text-sm text-gray-600">{q.disciplina}</p>
                                     <div className="mt-2 flex items-center gap-2">
                                         <span className="text-sm font-medium">Gabarito:</span>
-                                        {(['A', 'B', 'C', 'D', 'E'] as Alternativa[]).map(alt => (
+                                        {(['A', 'B', 'C', 'D'] as Alternativa[]).map(alt => (
                                             <button key={alt} onClick={() => handleSetGabarito(q.id, alt)} className={`w-7 h-7 text-xs rounded-full font-bold ${gabaritos.get(q.id) === alt ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>{alt}</button>
                                         ))}
                                     </div>
