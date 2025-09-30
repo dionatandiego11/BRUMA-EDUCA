@@ -1,11 +1,13 @@
-// src/main.tsx
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App';
-import './index.css'; // Importa os estilos do Tailwind
+import { AppRouter } from './router';
+import { AuthProvider } from './hooks/useAuth';
+import './index.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <App />
+    <AuthProvider>
+      <AppRouter />
+    </AuthProvider>
   </React.StrictMode>,
 );
